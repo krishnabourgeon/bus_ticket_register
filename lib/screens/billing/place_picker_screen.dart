@@ -165,7 +165,7 @@ class _PlacePickerScreenState extends State<PlacePickerScreen> {
                               horizontal: 14.w, vertical: 14.h),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? _blue.withOpacity(0.08)
+                                ? _blue.withValues(alpha: 0.08)
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(14.r),
                             border: Border.all(
@@ -180,7 +180,7 @@ class _PlacePickerScreenState extends State<PlacePickerScreen> {
                                 height: 36.w,
                                 width: 36.w,
                                 decoration: BoxDecoration(
-                                  color: _blue.withOpacity(0.1),
+                                  color: _blue.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(10.r),
                                 ),
                                 child: Icon(Icons.location_on_rounded,

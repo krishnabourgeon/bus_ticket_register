@@ -1,15 +1,15 @@
 import 'dart:developer';
+import 'package:bus_ticket_register/screens/billing/billing.dart';
+import 'package:bus_ticket_register/services/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bus_ticket_register/models/counters_model.dart';
 import 'package:bus_ticket_register/models/quickbill_datamodel.dart';
-import 'package:bus_ticket_register/screens/customer_creation/customer_selection_screen.dart';
 import 'package:bus_ticket_register/screens/home/bill_list_table.dart';
 import 'package:bus_ticket_register/screens/home/counter_summary_table.dart';
 import 'package:bus_ticket_register/screens/home/pooja_list_table.dart';
 import 'package:bus_ticket_register/services/provider_helper_class.dart';
 import 'billing_provider.dart';
-import 'create_cutomer_provider.dart';
 
 class HomeProvider extends ChangeNotifier with ProviderHelperClass {
   List<Datum>? counterdata = [];
@@ -138,18 +138,31 @@ class HomeProvider extends ChangeNotifier with ProviderHelperClass {
   ) {
     switch (index) {
       case 0:
+        // Navigator.push(
+        //     context,
+        //     MaterialPageRoute(
+        //       builder: (context) => const CustomerSelectionScreen(),
+        //     )).then((value) {
+        //   context.read<CreateCustomerProvider>().clearValues();
+        //   context.read<BillingProvider>()
+        //     ..getInitialDataList()
+        //     ..clearValues()
+        //     ..clearPaymentValues()
+        //     ..poojaDetailsList.clear();
+        // });
+        AppConfig.customerName = null;
+        AppConfig.customerNumber = null;
+        AppConfig.customerId = 1;
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CustomerSelectionScreen(),
-            )).then((value) {
-          context.read<CreateCustomerProvider>().clearValues();
-          context.read<BillingProvider>()
-            ..getInitialDataList()
-            ..clearValues()
-            ..clearPaymentValues()
-            ..poojaDetailsList.clear();
-        });
+              builder: (context) => const Billing(),
+            )).then((value) => context.read<BillingProvider>()
+          ..clearValues()
+          ..getPoojas()
+          ..nameController.clear()
+          ..clearPaymentValues()
+          ..poojaDetailsList.clear());
         break;
       // case 1:
       //   Navigator.push(

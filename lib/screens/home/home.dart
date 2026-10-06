@@ -715,7 +715,7 @@ class _HomeState extends State<Home> {
                       height: 42.w,
                       width: 42.w,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14.r),
                       ),
                       child: Icon(Icons.menu_rounded,
@@ -766,7 +766,7 @@ class _HomeState extends State<Home> {
               Text(
                 'Bus Ticket Booking',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.75),
+                  color: Colors.white.withValues(alpha: 0.75),
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
                 ),
@@ -778,7 +778,7 @@ class _HomeState extends State<Home> {
                 padding:
                     EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14.r),
                 ),
                 child: Row(
@@ -823,10 +823,10 @@ class _HomeState extends State<Home> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22.r),
-          border: Border.all(color: color.withOpacity(0.12)),
+          border: Border.all(color: color.withValues(alpha: 0.12)),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -840,7 +840,7 @@ class _HomeState extends State<Home> {
               height: 48.w,
               width: 48.w,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16.r),
               ),
               child: Icon(_cardIcons[index % _cardIcons.length],
@@ -914,7 +914,7 @@ class _HomeState extends State<Home> {
                   child: Icon(Icons.person, color: _navy)),
             ),
           ),
-          Divider(color: Colors.white.withOpacity(0.2), height: 1),
+          Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
           ListTile(
             leading: const Icon(Icons.logout_rounded, color: Colors.white),
             title: const Text(

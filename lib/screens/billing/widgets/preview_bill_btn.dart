@@ -92,11 +92,11 @@ class _PreviewBillButtonState extends State<PreviewBillButton> {
         child: Container(
           decoration: BoxDecoration(color: Colors.white, boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(.2),
+                color: Colors.black.withValues(alpha: .2),
                 spreadRadius: 5.r,
                 blurRadius: 10.r),
             BoxShadow(
-                color: Colors.black.withOpacity(.2),
+                color: Colors.black.withValues(alpha: .2),
                 spreadRadius: 5.r,
                 blurRadius: 10.r)
           ]),

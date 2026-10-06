@@ -1166,32 +1166,32 @@ class _BillingState extends State<Billing> {
                   SizedBox(height: 16.h),
                   _buildTotalBar(),
                   SizedBox(height: 24.h),
-                  CommonButton(
-                    title: "Save and Add Next",
-                    onPressed: _isFormValid
-                        ? () async {
-                            FocusScope.of(context).unfocus();
-                            BillingProvider.address = false;
-                            _pushToProvider(billingProvider);
-                            await billingProvider.saveAndNextFunction();
-                            _resetForm();
-                          }
-                        : null,
-                  ),
-                  10.verticalSpace,
+                  // CommonButton(
+                  //   title: "Save and Add Next",
+                  //   onPressed: _isFormValid
+                  //       ? () async {
+                  //           FocusScope.of(context).unfocus();
+                  //           BillingProvider.address = false;
+                  //           _pushToProvider(billingProvider);
+                  //           await billingProvider.saveAndNextFunction();
+                  //           _resetForm();
+                  //         }
+                  //       : null,
+                  // ),
+                  // 10.verticalSpace,
                   CommonButton(
                       title: "Save and Preview",
                       colors: [
                         billingProvider.poojaDetailsList.isEmpty
                             ? _isFormValid
-                                ? Colors.green
-                                : Colors.green.withOpacity(.5)
-                            : Colors.green,
+                                ? _navy
+                                : _blue
+                            : _navy,
                         billingProvider.poojaDetailsList.isEmpty
                             ? _isFormValid
-                                ? Colors.greenAccent
-                                : Colors.greenAccent.withOpacity(.5)
-                            : Colors.greenAccent
+                                ? _navy
+                                : _blue
+                            : _navy
                       ],
                       onPressed: billingProvider.poojaDetailsList.isEmpty
                           ? _isFormValid

@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:bus_ticket_register/providers/billing_provider.dart';
 import 'package:bus_ticket_register/screens/billing/widgets/preview_bill_row_widget.dart';
-import 'package:bus_ticket_register/screens/register/register_screen.dart';
 import 'package:bus_ticket_register/services/helpers.dart';
 import 'package:bus_ticket_register/services/validation_helper.dart';
 import 'package:bus_ticket_register/widgets/punnyam_textfiled.dart';
