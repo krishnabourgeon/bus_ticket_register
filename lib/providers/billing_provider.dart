@@ -1,4 +1,8 @@
 import 'dart:typed_data';
+import 'package:bus_ticket_register/models/error_response_model.dart';
+import 'package:bus_ticket_register/models/places_model.dart';
+import 'package:bus_ticket_register/screens/billing/place_picker_screen.dart';
+import 'package:bus_ticket_register/providers/ticket_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_sunmi_printer_plus/flutter_sunmi_printer_plus.dart';
@@ -138,6 +142,15 @@ class BillingProvider extends ChangeNotifier with ProviderHelperClass {
   bool isSearching = false;
   static bool address = false;
 
+  int? fromPlaceId;
+  int? toPlaceId;
+  String? fromPlaceName;
+  String? toPlaceName;
+  PlacesInitialData? initialDataList;
+  PlacesModel? fareDetailsResponse;
+  bool isFareLoading = false;
+  String? fareErrorMessage;
+
   TextEditingController mobileNumberController = TextEditingController();
   TextEditingController noOfMonthsController = TextEditingController();
   TextEditingController paidAmountController = TextEditingController();
@@ -153,17 +166,83 @@ class BillingProvider extends ChangeNotifier with ProviderHelperClass {
   List<PoojaDetails> previewDetailsList = [];
   PreviewBillResponse? previewBillResponse;
   double totalAmount = 0;
-  getInitialDataList() async {
-    await clearValues();
-    await getDeities();
-    await getStars();
-    await getStarIdFromName("Nodata");
-    getSpecialStars();
-    await getPoojas();
-    updateFromDate(DateFormat('y-MM-dd').format(DateTime.now()));
-    mobileNumberController.text = AppConfig.customerNumber ?? '';
-    nameController.text = AppConfig.customerName ?? '';
-    await updateBillingFormState();
+
+  /// Loads the route's stops from the API. Returns false (with
+  /// [fareErrorMessage] set) when nothing could be loaded.
+  Future<bool> getInitialDataList() async {
+    isFareLoading = true;
+    fareErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final res = await serviceConfig.getPlaces();
+      if (res.isValue) {
+        final List<FromPlace> stops = res.asValue!.value;
+        initialDataList = PlacesInitialData(
+          places:
+              stops.map((s) => PlaceOption(id: s.id, name: s.name)).toList(),
+        );
+      } else {
+        initialDataList = null;
+        fareErrorMessage = _errorText(res.asError!.error, 'Unable to load places');
+      }
+    } catch (e) {
+      debugPrint('BillingProvider getInitialDataList error: $e');
+      initialDataList = null;
+      fareErrorMessage = 'Something went wrong while loading places';
+    } finally {
+      isFareLoading = false;
+      notifyListeners();
+    }
+    return initialDataList?.places.isNotEmpty ?? false;
+  }
+
+  Future<PlacesModel?> getFareDetails({
+    required int fromplace,
+    required int toplace,
+  }) async {
+    isFareLoading = true;
+    fareErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final res = await serviceConfig.getFareDetails(
+        fromplace: fromplace,
+        toplace: toplace,
+      );
+
+      if (res.isValue) {
+        fareDetailsResponse = res.asValue!.value as PlacesModel;
+        return fareDetailsResponse;
+      } else {
+        fareDetailsResponse = null;
+        fareErrorMessage =
+            _errorText(res.asError!.error, 'Unable to fetch fare details');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('getFareDetails error: $e');
+      fareDetailsResponse = null;
+      fareErrorMessage = 'Something went wrong while fetching fare details';
+      return null;
+    } finally {
+      isFareLoading = false;
+      notifyListeners();
+    }
+  }
+
+  String _errorText(Object error, String fallback) =>
+      error is ErrorResponseModel ? (error.errorMessage ?? fallback) : fallback;
+
+  void clearPlaces() {
+    fromPlaceId = null;
+    toPlaceId = null;
+    fromPlaceName = null;
+    toPlaceName = null;
+    fareDetailsResponse = null;
+    fareErrorMessage = null;
+    isFareLoading = false;
+    notifyListeners();
   }
 
   Future<void> getPaymentModes(BuildContext context,
@@ -1098,30 +1177,31 @@ class BillingProvider extends ChangeNotifier with ProviderHelperClass {
   }
 
   saveAndPreviewFunction(BuildContext context) {
+    String routeTitle = (fromPlaceName != null && toPlaceName != null)
+        ? '$fromPlaceName to $toPlaceName'
+        : (nameController.text.trim().isNotEmpty
+            ? nameController.text.trim()
+            : 'Ticket');
     PoojaDetails poojaDetails = PoojaDetails(
-        // gothra: int.parse(gothraId ?? '0'),
-        // rashi: int.parse(rashiId ?? '0'),
-        // gothraname: gothraName,
-        // rashiname: rashiName,
-        name: nameController.text.isEmpty
-            ? 'Customer'
-            : nameController.text.trim(),
+        name: routeTitle,
+        pooja: routeTitle,
+       // diety: 'Bus Ticket',
         address: addressController.text,
         date: !isScheduled ? date : null,
-        deityId: int.parse(deityId ?? '1'),
+        deityId: int.tryParse(deityId) ?? 1,
         dwmo: scheduledType,
         fromDate: fromDate,
         isScheduled: isScheduled == true ? 1 : 0,
         noOfDays: noOfDaysController.text.isNotEmpty
-            ? int.parse(noOfDaysController.text.trim())
+            ? int.tryParse(noOfDaysController.text.trim())
             : null,
         noOfMonths: noOfMonthsController.text.isNotEmpty
-            ? int.parse(noOfMonthsController.text.trim())
+            ? int.tryParse(noOfMonthsController.text.trim())
             : null,
         noOfWeeks: noOfWeeksController.text.isNotEmpty
-            ? int.parse(noOfWeeksController.text.trim())
+            ? int.tryParse(noOfWeeksController.text.trim())
             : null,
-        poojaId: int.parse(poojaId),
+        poojaId: int.tryParse(poojaId) ?? 1,
         prasadamStatus: (isPrasadhamIncluded ?? false) ? 1 : 0,
         qty: int.parse(qtyController.text.trim()),
         rate: double.parse(rateController.text.trim()),

@@ -202,13 +202,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:bus_ticket_register/common/common_button.dart';
 import 'package:bus_ticket_register/providers/auth_provider.dart';
-import 'package:bus_ticket_register/providers/billing_provider.dart';
-import 'package:bus_ticket_register/providers/home_provider.dart';
 import 'package:bus_ticket_register/screens/home/home.dart';
-import 'package:bus_ticket_register/screens/register/register_screen.dart';
 import 'package:bus_ticket_register/services/helpers.dart';
 import 'package:bus_ticket_register/services/provider_helper_class.dart';
-import 'package:bus_ticket_register/services/validation_helper.dart';
 import 'package:bus_ticket_register/widgets/punnyam_textfiled.dart';
 
 class Login extends StatefulWidget {
@@ -218,6 +214,16 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+
+
+  @override
+  void initState() {
+    super.initState();
+  WidgetsBinding.instance.addPostFrameCallback(
+      (_) => context.read<AuthProvider>().getRoutesBuses());
+}
+
+
   // Same palette as the splash screen.
   static const Color _navy = Color(0xFF0B2A5B);
   static const Color _blue = Color(0xFF1E5AA8);
@@ -300,6 +306,91 @@ class _LoginState extends State<Login> {
     );
   }
 
+  
+Widget _buildRouteDropdown(dynamic provider) {
+  return DropdownButtonFormField<int>(
+    value: provider.selectedRoute?.id,
+    isExpanded: true,
+    decoration: InputDecoration(
+      labelText: 'Select Route',
+      prefixIcon: const Icon(Icons.alt_route),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: 14.w,
+        vertical: 15.h,
+      ),
+    ),
+    hint: const Text('Choose a route'),
+    items: provider.routeList.map<DropdownMenuItem<int>>(
+      (route) {
+        return DropdownMenuItem<int>(
+          value: route.id,
+          child: Text(
+            '${route.routeNo} - ${route.name}',
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      },
+    ).toList(),
+    onChanged: provider.isRoutesBusesLoading
+        ? null
+        : (routeId) {
+            final route = provider.routeList.firstWhere(
+              (item) => item.id == routeId,
+            );
+
+            provider.selectRoute(route);
+          },
+  );
+}
+
+Widget _buildBusDropdown(dynamic provider) {
+  return DropdownButtonFormField<int>(
+    value: provider.selectedBus?.id,
+    isExpanded: true,
+    decoration: InputDecoration(
+      labelText: 'Select Bus',
+      prefixIcon: const Icon(Icons.directions_bus),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: 14.w,
+        vertical: 15.h,
+      ),
+    ),
+    hint: Text(
+      provider.selectedRoute == null
+          ? 'Select a route first'
+          : 'Choose a bus',
+    ),
+    items: provider.busList.map<DropdownMenuItem<int>>(
+      (bus) {
+        return DropdownMenuItem<int>(
+          value: bus.id,
+          child: Text(
+            '${bus.busNo} - ${bus.name}',
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      },
+    ).toList(),
+    onChanged: provider.selectedRoute == null ||
+            provider.isRoutesBusesLoading
+        ? null
+        : (busId) {
+            final bus = provider.busList.firstWhere(
+              (item) => item.id == busId,
+            );
+
+            provider.selectBus(bus);
+          },
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -349,21 +440,36 @@ class _LoginState extends State<Login> {
                         SizedBox(
                           height: 22.h,
                         ),
+                          _buildRouteDropdown(authProvider),
+                        SizedBox(height: 16.h),
+                        _buildBusDropdown(authProvider),
+                        SizedBox(
+                          height: 22.h,
+                        ),
+                        // PunnyamTextField(
+                        //   contentpadding: EdgeInsets.symmetric(vertical: 15.h),
+                        //   hintText: "Username",
+                        //   textEditingController:
+                        //       authProvider.loginUsernameController,
+                        //   prefixIcon: Icons.person,
+                        //   onChanged: (value) {
+                        //     authProvider.updateValidationMessages(
+                        //         validationType: ValidationTypes.userName,
+                        //         validationMessage:
+                        //             ValidationHelperClass.validateEmail(
+                        //                     value.trim()) ??
+                        //                 '');
+                        //   },
+                        // ),
+                        
                         PunnyamTextField(
                           contentpadding: EdgeInsets.symmetric(vertical: 15.h),
-                          hintText: "Email",
-                          textEditingController:
-                              authProvider.loginUsernameController,
+                          hintText: "Username",
+                          textEditingController: authProvider.loginUsernameController,
                           prefixIcon: Icons.person,
-                          onChanged: (value) {
-                            authProvider.updateValidationMessages(
-                                validationType: ValidationTypes.userName,
-                                validationMessage:
-                                    ValidationHelperClass.validateEmail(
-                                            value.trim()) ??
-                                        '');
-                          },
+                          onChanged: (value) => authProvider.clearLoginErrors(),
                         ),
+
                         if (authProvider.userNameValidationMessage != null)
                           Padding(
                             padding: EdgeInsets.symmetric(
@@ -383,10 +489,19 @@ class _LoginState extends State<Login> {
                               authProvider.loginPasswordController,
                           prefixIcon: Icons.lock,
                           onChanged: (value) =>
-                              authProvider.updateLoginFormState(),
+                              authProvider.clearLoginErrors(),
                           makePasswordField: true,
                           textInputAction: TextInputAction.done,
                         ),
+                        if (authProvider.passwordValidationMessage != null)
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10.w, vertical: 5.h),
+                            child: Text(
+                              authProvider.passwordValidationMessage ?? '',
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
                         SizedBox(
                           height: 10.h,
                         ),
@@ -416,29 +531,13 @@ class _LoginState extends State<Login> {
                                 ? () {
                                     FocusScope.of(context).unfocus();
                                     authProvider.login(
-                                        onSuccess: () async {
-                                          final home =
-                                              context.read<HomeProvider>();
-                                          final billingProvider =
-                                              context.read<BillingProvider>();
-                                          await home.getquickbill();
-                                          await billingProvider.getStars();
-                                          await billingProvider
-                                              .getversion(context);
-
-                                          billingProvider.getPaymentModes(
-                                              context,
-                                              onFailure: () => Helpers.successToast(
-                                                  'Error occurred while fetching payment modes ....!'));
-
+                                        onSuccess: () {
                                           Navigator.pushReplacement(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) =>
                                                     const Home(),
-                                              )).then((value) async {
-                                            await home.getCounter();
-
+                                              )).then((value) {
                                             authProvider.clearValues();
                                           });
                                         },
@@ -449,31 +548,31 @@ class _LoginState extends State<Login> {
                         SizedBox(
                           height: 50.h,
                         ),
-                        Center(
-                          child: RichText(
-                            text: TextSpan(
-                              text: 'Not a member ? ',
-                              style: TextStyle(color: Colors.grey.shade700),
-                              children: <WidgetSpan>[
-                                WidgetSpan(
-                                    child: InkWell(
-                                  onTap: () {
-                                    FocusScope.of(context).unfocus();
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const RegisterScreen()));
-                                  },
-                                  child: const Text('Sign up now',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: _navy)),
-                                ))
-                              ],
-                            ),
-                          ),
-                        ),
+                        // Center(
+                        //   child: RichText(
+                        //     text: TextSpan(
+                        //       text: 'Not a member ? ',
+                        //       style: TextStyle(color: Colors.grey.shade700),
+                        //       children: <WidgetSpan>[
+                        //         WidgetSpan(
+                        //             child: InkWell(
+                        //           onTap: () {
+                        //             FocusScope.of(context).unfocus();
+                        //             Navigator.push(
+                        //                 context,
+                        //                 MaterialPageRoute(
+                        //                     builder: (context) =>
+                        //                         const RegisterScreen()));
+                        //           },
+                        //           child: const Text('Sign up now',
+                        //               style: TextStyle(
+                        //                   fontWeight: FontWeight.bold,
+                        //                   color: _navy)),
+                        //         ))
+                        //       ],
+                        //     ),
+                        //   ),
+                        // ),
                         SizedBox(
                           height: 20.h,
                         ),

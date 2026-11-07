@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:bus_ticket_register/models/error_response_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:bus_ticket_register/services/app_config.dart';
 import 'package:bus_ticket_register/services/helpers.dart';
@@ -52,6 +53,7 @@ class BaseClient {
             'API not responded in time', uri.toString());
       }
     }
+    return Result.error(ErrorResponseModel(errorMessage: 'No Internet'));
   }
 
   //POST METHOD
@@ -82,6 +84,7 @@ class BaseClient {
             'API not responded in time', uri.toString());
       }
     }
+    return Result.error(ErrorResponseModel(errorMessage: 'No Internet'));
   }
 
   static dynamic _processResponse(http.Response response) {
@@ -95,20 +98,34 @@ class BaseClient {
         // var responseJson = utf8.decode(response.bodyBytes);
         return Result.value(jsonDecode(response.body));
       case 400:
-        throw BadRequestException(
-            utf8.decode(response.bodyBytes), response.request!.url.toString());
       case 401:
       case 403:
-        return Result.value(jsonDecode(response.body));
+      case 404:
       case 422:
-        throw BadRequestException(
-            utf8.decode(response.bodyBytes), response.request!.url.toString());
+        return Result.error(_errorFromResponse(response));
       case 500:
       default:
         throw FetchDataException(
             'Error occured with code : ${response.statusCode}',
             response.request!.url.toString());
     }
+  }
+
+  // Laravel sends {"message": ..., "errors": {...}}; a 404 sends an HTML page.
+  static ErrorResponseModel _errorFromResponse(http.Response response) {
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map<String, dynamic>) {
+        return ErrorResponseModel.fromJson(body, response.statusCode);
+      }
+    } on FormatException {
+      // not JSON, fall through
+    }
+    return ErrorResponseModel(
+        errorMessage: response.statusCode == 404
+            ? 'API not found'
+            : 'Error occured with code : ${response.statusCode}',
+        statusCode: response.statusCode);
   }
 
   static Future<bool> isInternetAvailable({bool enableToast = true}) async {

@@ -101,12 +101,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
-import 'package:bus_ticket_register/providers/billing_provider.dart';
-import 'package:bus_ticket_register/providers/home_provider.dart';
 import 'package:bus_ticket_register/screens/login/login.dart';
 import 'package:bus_ticket_register/services/app_config.dart';
-import 'package:bus_ticket_register/services/helpers.dart';
 import 'package:bus_ticket_register/services/shared_preference_helper.dart';
 import '../home/home.dart';
 
@@ -159,20 +155,8 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   navToScreen() async {
-    final home = context.read<HomeProvider>();
-    final billingProvider = context.read<BillingProvider>();
+    if (!mounted) return;
     if ((AppConfig.accessToken ?? '').isNotEmpty) {
-      await billingProvider.getversion(context);
-      await home.getquickbill();
-      await billingProvider.getStars();
-      await billingProvider.getgothra();
-      await billingProvider.getrashi();
-
-      if (!mounted) return;
-      billingProvider.getPaymentModes(context,
-          onFailure: () => Helpers.successToast(
-              'Error occurred while fetching payment modes ....!'));
-
       Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const Home()),

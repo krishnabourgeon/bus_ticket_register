@@ -589,7 +589,6 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -622,23 +621,17 @@ class _HomeState extends State<Home> {
   // Order must stay the same: navigationSwitch() works by index.
   List<String> titleCards = [
     "Ticket Billing",
-    "Ticket List",
-    'Ticket Summary',
-    'Counter Wise Summary',
+    "Report",
   ];
 
   final List<IconData> _cardIcons = const [
     Icons.confirmation_number_rounded,
     Icons.receipt_long_rounded,
-    Icons.route_rounded,
-    Icons.point_of_sale_rounded,
   ];
 
   final List<Color> _cardColors = const [
     Color(0xFF1E5AA8),
     Color(0xFFF59E0B),
-    Color(0xFF0E9F8E),
-    Color(0xFF6D4AD8),
   ];
 
   final _drawerController = ZoomDrawerController();
@@ -961,10 +954,8 @@ class _HomeState extends State<Home> {
                     SizedBox(
                         height: 25.h,
                         width: 25.w,
-                        child: SvgPicture.asset(
-                          "assets/image/google_play.svg",
-                          fit: BoxFit.contain,
-                        )),
+                        child: Icon(Icons.shop,
+                            size: 22.w, color: Colors.blueGrey)),
                     8.horizontalSpace,
                     Text(
                       "Google Play",
@@ -1049,11 +1040,18 @@ class _HomeState extends State<Home> {
 
   // ------------------------------------------------------------------ build
 
+  // Only block the app when the version API actually reported a newer build.
+  bool _isUpdateRequired(BillingProvider provider) {
+    final versions = provider.version?.data;
+    if (versions == null || versions.isEmpty) return false;
+    return versions[0].androidVersion != AppConfig.version;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<BillingProvider>(
       builder: (context, home, child) => Scaffold(
-        bottomSheet: home.version?.data![0].androidVersion != AppConfig.version
+        bottomSheet: _isUpdateRequired(home)
             ? BottomSheet(
                 onClosing: () {},
                 builder: (BuildContext context) => _buildUpdateSheet(),
@@ -1073,10 +1071,7 @@ class _HomeState extends State<Home> {
         backgroundColor: _navy,
         body: Consumer<BillingProvider>(builder: (context, provider, _) {
           return IgnorePointer(
-            ignoring:
-                provider.version?.data![0].androidVersion == AppConfig.version
-                    ? false
-                    : true,
+            ignoring: _isUpdateRequired(provider),
             child: RefreshIndicator(
               onRefresh: () async {},
               child: ZoomDrawer(

@@ -3,7 +3,7 @@ class AppConfig {
   factory AppConfig() => _instance;
   AppConfig._internal();
 
-  static String baseUrl = "http://appuser.templesoftware.in/public/api/";
+  static String baseUrl = "https://busticket.simbillsoft.in/api/";
   static String? accessToken;
   static String? counterID;
   static int? customerId;

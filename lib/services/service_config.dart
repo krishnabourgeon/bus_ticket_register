@@ -1,3 +1,8 @@
+import 'package:bus_ticket_register/models/places_model.dart';
+import 'package:bus_ticket_register/models/reports_model.dart';
+import 'package:bus_ticket_register/models/routes_buses_model.dart';
+import 'package:bus_ticket_register/models/save_ticket_body.dart';
+import 'package:bus_ticket_register/models/save_ticket_response.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bus_ticket_register/models/bill_list_response_model.dart';
 import 'package:bus_ticket_register/models/counter_wise_summary_response.dart';
@@ -27,25 +32,28 @@ import 'package:async/async.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ServiceConfig {
-  Future<Result> login({String? email, String? password}) async {
+  Future<Result> login({String? email, String? password, int? routeid, int? busid}) async {
     Map<String, dynamic> body = {
-      'email': email ?? '',
-      'password': password ?? ''
+      'username': email ?? '',
+      'password': password ?? '',
+      'route_id': routeid,
+      'bus_id':busid
     };
 
-    Result res = await BaseClient.post('auth/login', body: body);
+    Result res = await BaseClient.post('login', body: body);
     if (res.isError) {
-      ErrorResponseModel errorResponseModel =
-          ErrorResponseModel(errorMessage: 'OOps...!, login failed');
-      return Result.error(errorResponseModel);
+      // ErrorResponseModel errorResponseModel =
+      //     ErrorResponseModel(errorMessage: 'OOps...!, login failed');
+      // return Result.error(errorResponseModel);
+      return res;
     } else {
       var response = res.asValue!.value;
       debugPrint('login response $response');
       LoginResponseModel loginResponseModel =
           LoginResponseModel.fromJson(response);
-      return (loginResponseModel.status ?? false)
-          ? Result.value(loginResponseModel)
-          : Result.error(loginResponseModel);
+      return loginResponseModel.accessToken.isNotEmpty
+    ? Result.value(loginResponseModel)
+    : Result.error(ErrorResponseModel(errorMessage: loginResponseModel.message));
     }
   }
 
@@ -61,11 +69,87 @@ class ServiceConfig {
       debugPrint('login response $response');
       LoginResponseModel loginResponseModel =
           LoginResponseModel.fromJson(response);
-      return (loginResponseModel.status ?? false)
+      return (loginResponseModel.message == "")
           ? Result.value(loginResponseModel)
           : Result.error(loginResponseModel);
     }
   }
+
+
+    Future<Result> getRoutesBuses() async {
+    Result res = await BaseClient.get('login-options');
+    if (res.isError) {
+      ErrorResponseModel errorResponseModel =
+          ErrorResponseModel(errorMessage: 'OOps...!, Something went wrong');
+      return Result.error(errorResponseModel);
+    } else {
+      var response = res.asValue!.value;
+      debugPrint('getRoutesBuses response $response');
+      RotesBusesModel routesBusesModel = RotesBusesModel.fromJson(response);
+      return (routesBusesModel.routes.isNotEmpty)
+          ? Result.value(routesBusesModel)
+          : Result.error(routesBusesModel);
+    }
+  }
+
+
+  
+  /// Stops of the logged-in route, for the From / To pickers.
+  Future<Result> getPlaces() async {
+    final Result res = await BaseClient.get('places');
+    if (res.isError) return res;
+
+    try {
+      final response = res.asValue!.value;
+      debugPrint('Places response: $response');
+
+      // Accept a bare list or a list under "stops" / "places" / "data".
+      dynamic list = response;
+      if (response is Map) {
+        list = response['stops'] ?? response['places'] ?? response['data'];
+      }
+      if (list is! List) {
+        return Result.error(
+            ErrorResponseModel(errorMessage: 'Unable to parse places'));
+      }
+      final places = list
+          .map((x) => FromPlace.fromJson(Map<String, dynamic>.from(x)))
+          .toList();
+      return places.isNotEmpty
+          ? Result.value(places)
+          : Result.error(
+              ErrorResponseModel(errorMessage: 'No places found for this route'));
+    } catch (e) {
+      debugPrint('getPlaces parsing error: $e');
+      return Result.error(
+          ErrorResponseModel(errorMessage: 'Unable to parse places'));
+    }
+  }
+
+  /// Fare between two stops. Both ids are required by the API.
+  Future<Result> getFareDetails({
+    required int fromplace,
+    required int toplace,
+  }) async {
+    final Result res = await BaseClient.get('fare-details', map: {
+      'from_place_id': '$fromplace',
+      'to_place_id': '$toplace',
+    });
+    if (res.isError) return res;
+
+    try {
+      final response = res.asValue!.value;
+      debugPrint('Fare details response: $response');
+      final PlacesModel placesModel =
+          PlacesModel.fromJson(Map<String, dynamic>.from(response));
+      return Result.value(placesModel);
+    } catch (e) {
+      debugPrint('getFareDetails parsing error: $e');
+      return Result.error(
+          ErrorResponseModel(errorMessage: 'Unable to parse fare details'));
+    }
+  }
+
 
   Future<Result> getDeities() async {
     Result res = await BaseClient.get('deities');
@@ -80,6 +164,22 @@ class ServiceConfig {
       return (deitiesResponse.status ?? false)
           ? Result.value(deitiesResponse)
           : Result.error(deitiesResponse);
+    }
+  }
+
+    Future<Result> getReport(String fromdate, String todate) async {
+    Result res = await BaseClient.get('reports/collection?from_date=$fromdate&to_date=$todate');
+    if (res.isError) {
+      ErrorResponseModel errorResponseModel =
+          ErrorResponseModel(errorMessage: 'OOps...!, Something went wrong');
+      return Result.error(errorResponseModel);
+    } else {
+      var response = res.asValue!.value;
+      debugPrint('deities response $response');
+      ReportsModel reportsModel = ReportsModel.fromJson(response);
+      return (reportsModel.message.isNotEmpty)
+          ? Result.value(reportsModel)
+          : Result.error(reportsModel);
     }
   }
 
@@ -270,6 +370,27 @@ class ServiceConfig {
       return (saveBillResponse.status ?? false)
           ? Result.value(saveBillResponse)
           : Result.error(saveBillResponse);
+    }
+  }
+
+
+    Future<Result> saveTicket(SaveTicketBody saveTicketBody) async {
+    if (kDebugMode) {
+      print("saveticket..............${saveTicketBody.toJson()}");
+    }
+    Result res =
+        await BaseClient.post('tickets', body: saveTicketBody.toJson());
+    if (res.isError) {
+      ErrorResponseModel errorResponseModel =
+          ErrorResponseModel(errorMessage: 'OOps...!, Something went wrong');
+      return Result.error(errorResponseModel);
+    } else {
+      var response = res.asValue!.value;
+
+      SaveTicketResponse saveTicketResponse = SaveTicketResponse.fromJson(response);
+      return (saveTicketResponse.message != null)
+          ? Result.value(saveTicketResponse)
+          : Result.error(saveTicketResponse);
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:bus_ticket_register/providers/auth_provider.dart';
 import 'package:bus_ticket_register/providers/bill_details_provider.dart';
 import 'package:bus_ticket_register/providers/create_cutomer_provider.dart';
 import 'package:bus_ticket_register/providers/home_provider.dart';
+import 'package:bus_ticket_register/providers/ticket_provider.dart';
 import '../providers/billing_provider.dart';
 
 class MultiProviderList {
@@ -13,6 +14,7 @@ class MultiProviderList {
     ChangeNotifierProvider(create: (_) => HomeProvider()),
     ChangeNotifierProvider(create: (_) => CreateCustomerProvider()),
     ChangeNotifierProvider(create: (_) => BillDetailprovider()),
+    ChangeNotifierProvider(create: (_) => TicketProvider()),
     // ChangeNotifierProvider(create: (_) => PreviewBillProvider())
   ];
 }
